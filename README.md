@@ -1,1 +1,128 @@
-# Sofas-and-tvs
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chumpak Lala's Furniture & Electronics</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      background-color: #3e2723;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+
+    .product-section {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 30px;
+    }
+
+    .product-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 15px;
+      width: 300px;
+      overflow: hidden;
+      transition: transform 0.3s;
+    }
+
+    .product-card:hover {
+      transform: scale(1.03);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .product-info {
+      padding: 15px;
+    }
+
+    .product-info h3 {
+      margin: 0 0 10px;
+      color: #333;
+    }
+
+    .product-info p {
+      margin: 0;
+      color: #555;
+    }
+
+    footer {
+      background-color: #3e2723;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Chumpak Lala's Sofas & Televisions</h1>
+    <p>Premium Comfort & Entertainment</p>
+  </header>
+
+  <section class="product-section">
+    <!-- Sofa 1 -->
+    <div class="product-card">
+      <img src="https://via.placeholder.com/300x200?text=Sofa+1" alt="Modern Sofa">
+      <div class="product-info">
+        <h3>Modern Fabric Sofa</h3>
+        <p>Comfortable 3-seater with plush cushions. ₹18,999</p>
+      </div>
+    </div>
+
+    <!-- Sofa 2 -->
+    <div class="product-card">
+      <img src="https://via.placeholder.com/300x200?text=Sofa+2" alt="Leather Sofa">
+      <div class="product-info">
+        <h3>Luxury Leather Sofa</h3>
+        <p>Elegant design with premium leather. ₹25,499</p>
+      </div>
+    </div>
+
+    <!-- TV 1 -->
+    <div class="product-card">
+      <img src="https://via.placeholder.com/300x200?text=TV+1" alt="Smart TV">
+      <div class="product-info">
+        <h3>42" Smart LED TV</h3>
+        <p>Full HD resolution with built-in apps. ₹16,999</p>
+      </div>
+    </div>
+
+    <!-- TV 2 -->
+    <div class="product-card">
+      <img src="https://via.placeholder.com/300x200?text=TV+2" alt="4K TV">
+      <div class="product-info">
+        <h3>55" 4K Ultra HD TV</h3>
+        <p>Immersive viewing experience. ₹32,499</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Contact us at 📞 98765-43210 | 📧 info@chumpaklala.com
+  </footer>
+
+</body>
+</html>
