@@ -1,128 +1,390 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chumpak Lala's Furniture & Electronics</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f4f4;
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, Eye, Send, Trash2, Edit } from 'lucide-react';
+
+const CustomerManagementApp = () => {
+  const [customers, setCustomers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showLedger, setShowLedger] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    mobile: '',
+    product: '',
+    amountGiven: '',
+    amountBalance: ''
+  });
+
+  // Load data from localStorage on component mount
+  useEffect(() => {
+    const savedCustomers = localStorage.getItem('customerData');
+    if (savedCustomers) {
+      setCustomers(JSON.parse(savedCustomers));
+    }
+  }, []);
+
+  // Save data to localStorage whenever customers state changes
+  useEffect(() => {
+    localStorage.setItem('customerData', JSON.stringify(customers));
+  }, [customers]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (!formData.name || !formData.mobile || !formData.product) {
+      alert('Please fill all required fields');
+      return;
     }
 
-    header {
-      background-color: #3e2723;
-      color: white;
-      padding: 20px;
-      text-align: center;
+    const customerData = {
+      id: editingCustomer ? editingCustomer.id : Date.now(),
+      name: formData.name,
+      mobile: formData.mobile,
+      product: formData.product,
+      amountGiven: parseFloat(formData.amountGiven) || 0,
+      amountBalance: parseFloat(formData.amountBalance) || 0,
+      timestamp: editingCustomer ? editingCustomer.timestamp : new Date().toISOString()
+    };
+
+    if (editingCustomer) {
+      setCustomers(prev => prev.map(customer => 
+        customer.id === editingCustomer.id ? customerData : customer
+      ));
+      setEditingCustomer(null);
+    } else {
+      setCustomers(prev => [...prev, customerData]);
     }
 
-    h1 {
-      margin: 0;
-      font-size: 2em;
+    setFormData({
+      name: '',
+      mobile: '',
+      product: '',
+      amountGiven: '',
+      amountBalance: ''
+    });
+    setShowAddForm(false);
+  };
+
+  const handleEdit = (customer) => {
+    setEditingCustomer(customer);
+    setFormData({
+      name: customer.name,
+      mobile: customer.mobile,
+      product: customer.product,
+      amountGiven: customer.amountGiven.toString(),
+      amountBalance: customer.amountBalance.toString()
+    });
+    setShowAddForm(true);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this customer?')) {
+      setCustomers(prev => prev.filter(customer => customer.id !== id));
     }
+  };
 
-    .product-section {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 30px;
-    }
+  const filteredCustomers = customers.filter(customer =>
+    customer.mobile.includes(searchTerm) ||
+    customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    .product-card {
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin: 15px;
-      width: 300px;
-      overflow: hidden;
-      transition: transform 0.3s;
-    }
+  const viewLedger = (customer) => {
+    setSelectedCustomer(customer);
+    setShowLedger(true);
+  };
 
-    .product-card:hover {
-      transform: scale(1.03);
-    }
+  const sendLedgerToMobile = (customer) => {
+    const ledgerText = `
+Customer Ledger
+Name: ${customer.name}
+Mobile: ${customer.mobile}
+Product: ${customer.product}
+Amount Given: ₹${customer.amountGiven}
+Amount Balance: ₹${customer.amountBalance}
+Date: ${new Date(customer.timestamp).toLocaleDateString()}
+    `;
+    
+    // In a real app, you would integrate with an SMS service
+    alert(`Ledger details would be sent to ${customer.mobile}:\n${ledgerText}`);
+  };
 
-    .product-card img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-    }
+  const totalGiven = customers.reduce((sum, customer) => sum + customer.amountGiven, 0);
+  const totalBalance = customers.reduce((sum, customer) => sum + customer.amountBalance, 0);
 
-    .product-info {
-      padding: 15px;
-    }
-
-    .product-info h3 {
-      margin: 0 0 10px;
-      color: #333;
-    }
-
-    .product-info p {
-      margin: 0;
-      color: #555;
-    }
-
-    footer {
-      background-color: #3e2723;
-      color: white;
-      text-align: center;
-      padding: 10px;
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <h1>Chumpak Lala's Sofas & Televisions</h1>
-    <p>Premium Comfort & Entertainment</p>
-  </header>
-
-  <section class="product-section">
-    <!-- Sofa 1 -->
-    <div class="product-card">
-      <img src="sofa1.jpg" alt="Modern Sofa">
-      <div class="product-info">
-        <h3>Modern Cream Sofa</h3>
-        <p>Elegant and minimal design. ₹18,999</p>
+  return (
+    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Customer Management System</h1>
+      
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-700">Total Customers</h3>
+          <p className="text-3xl font-bold text-blue-600">{customers.length}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-700">Total Amount Given</h3>
+          <p className="text-3xl font-bold text-green-600">₹{totalGiven.toFixed(2)}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-700">Total Balance</h3>
+          <p className="text-3xl font-bold text-red-600">₹{totalBalance.toFixed(2)}</p>
+        </div>
       </div>
-    </div>
 
-    <!-- Sofa 2 -->
-    <div class="product-card">
-      <img src="https://via.placeholder.com/300x200?text=Sofa+2" alt="Leather Sofa">
-      <div class="product-info">
-        <h3>Luxury Leather Sofa</h3>
-        <p>Elegant design with premium leather. ₹25,499</p>
+      {/* Search and Add Button */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by mobile number or name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <button
+          onClick={() => {
+            setShowAddForm(true);
+            setEditingCustomer(null);
+            setFormData({
+              name: '',
+              mobile: '',
+              product: '',
+              amountGiven: '',
+              amountBalance: ''
+            });
+          }}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Customer
+        </button>
       </div>
-    </div>
 
-    <!-- TV 1 -->
-    <div class="product-card">
-      <img src="https://via.placeholder.com/300x200?text=TV+1" alt="Smart TV">
-      <div class="product-info">
-        <h3>42\" Smart LED TV</h3>
-        <p>Full HD resolution with built-in apps. ₹16,999</p>
+      {/* Add/Edit Customer Form */}
+      {showAddForm && (
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-xl font-semibold mb-4">
+            {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Customer Name *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mobile Number *
+              </label>
+              <input
+                type="tel"
+                name="mobile"
+                value={formData.mobile}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Product Bought *
+              </label>
+              <input
+                type="text"
+                name="product"
+                value={formData.product}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Amount Given
+              </label>
+              <input
+                type="number"
+                name="amountGiven"
+                value={formData.amountGiven}
+                onChange={handleInputChange}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Amount Balance
+              </label>
+              <input
+                type="number"
+                name="amountBalance"
+                value={formData.amountBalance}
+                onChange={handleInputChange}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="md:col-span-2 flex gap-4">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+              >
+                {editingCustomer ? 'Update Customer' : 'Add Customer'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddForm(false);
+                  setEditingCustomer(null);
+                }}
+                className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer List */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Customer Details
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Product
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amounts
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredCustomers.map((customer) => (
+                <tr key={customer.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                      <div className="text-sm text-gray-500">{customer.mobile}</div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(customer.timestamp).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{customer.product}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      <div className="text-green-600">Given: ₹{customer.amountGiven.toFixed(2)}</div>
+                      <div className="text-red-600">Balance: ₹{customer.amountBalance.toFixed(2)}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => viewLedger(customer)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="View Ledger"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => sendLedgerToMobile(customer)}
+                        className="text-green-600 hover:text-green-900"
+                        title="Send to Mobile"
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(customer)}
+                        className="text-orange-600 hover:text-orange-900"
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(customer.id)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        {filteredCustomers.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            {searchTerm ? 'No customers found matching your search.' : 'No customers added yet.'}
+          </div>
+        )}
       </div>
+
+      {/* Ledger Modal */}
+      {showLedger && selectedCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold mb-4">Customer Ledger</h2>
+            <div className="space-y-2">
+              <div><strong>Name:</strong> {selectedCustomer.name}</div>
+              <div><strong>Mobile:</strong> {selectedCustomer.mobile}</div>
+              <div><strong>Product:</strong> {selectedCustomer.product}</div>
+              <div><strong>Amount Given:</strong> ₹{selectedCustomer.amountGiven.toFixed(2)}</div>
+              <div><strong>Amount Balance:</strong> ₹{selectedCustomer.amountBalance.toFixed(2)}</div>
+              <div><strong>Date:</strong> {new Date(selectedCustomer.timestamp).toLocaleDateString()}</div>
+            </div>
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => sendLedgerToMobile(selectedCustomer)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+              >
+                <Send className="h-4 w-4" />
+                Send to Mobile
+              </button>
+              <button
+                onClick={() => setShowLedger(false)}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+};
 
-    <!-- TV 2 -->
-    <div class="product-card">
-      <img src="https://via.placeholder.com/300x200?text=TV+2" alt="4K TV">
-      <div class="product-info">
-        <h3>55\" 4K Ultra HD TV</h3>
-        <p>Immersive viewing experience. ₹32,499</p>
-      </div>
-    </div>
-  </section>
-
-  <footer>
-    Contact us at 📞 98765-43210 | 📧 info@chumpaklala.com
-  </footer>
-
-</body>
-</html>
+export default CustomerManagementApp;
