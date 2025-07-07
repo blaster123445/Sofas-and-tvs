@@ -62,6 +62,7 @@
         .card .total-customers { color: #3b82f6; }
         .card .total-given { color: #10b981; }
         .card .total-balance { color: #ef4444; }
+        .card .total-receivable { color: #f59e0b; }
         
         .controls {
             display: flex;
@@ -411,6 +412,10 @@
                 <h3>Total Balance</h3>
                 <div class="value total-balance" id="totalBalance">₹0.00</div>
             </div>
+            <div class="card">
+                <h3>Total Amount to be Received</h3>
+                <div class="value total-receivable" id="totalReceivable">₹0.00</div>
+            </div>
         </div>
         
         <!-- Controls -->
@@ -653,7 +658,7 @@ Amount Given: ₹${currentLedgerCustomer.amountGiven.toFixed(2)}
 Amount Balance: ₹${currentLedgerCustomer.amountBalance.toFixed(2)}
 Date: ${new Date(currentLedgerCustomer.timestamp).toLocaleDateString()}
             `;
-            
+
             // In a real app, you would integrate with an SMS service
             alert(`Ledger details would be sent to ${currentLedgerCustomer.mobile}:${ledgerText}`);
         }
@@ -669,10 +674,12 @@ Date: ${new Date(currentLedgerCustomer.timestamp).toLocaleDateString()}
             const totalCustomers = customers.length;
             const totalGiven = customers.reduce((sum, customer) => sum + customer.amountGiven, 0);
             const totalBalance = customers.reduce((sum, customer) => sum + customer.amountBalance, 0);
+            const totalReceivable = customers.reduce((sum, customer) => sum + customer.amountBalance, 0);
             
             document.getElementById('totalCustomers').textContent = totalCustomers;
             document.getElementById('totalGiven').textContent = `₹${totalGiven.toFixed(2)}`;
             document.getElementById('totalBalance').textContent = `₹${totalBalance.toFixed(2)}`;
+            document.getElementById('totalReceivable').textContent = `₹${totalReceivable.toFixed(2)}`;
         }
         
         // Render customer table
@@ -747,7 +754,7 @@ Amount Given: ₹${customer.amountGiven.toFixed(2)}
 Amount Balance: ₹${customer.amountBalance.toFixed(2)}
 Date: ${new Date(customer.timestamp).toLocaleDateString()}
             `;
-            
+
             alert(`Ledger details would be sent to ${customer.mobile}:${ledgerText}`);
         }
         
