@@ -62,7 +62,6 @@
         .card .total-customers { color: #3b82f6; }
         .card .total-given { color: #10b981; }
         .card .total-balance { color: #ef4444; }
-        .card .total-receivable { color: #f59e0b; }
         
         .controls {
             display: flex;
@@ -346,310 +345,264 @@
         .ledger-info div {
             margin-bottom: 10px;
             padding: 5px 0;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .ledger-info strong {
-            color: #374151;
-            margin-right: 10px;
-        }
-        
-        .modal-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: flex-end;
-            flex-wrap: wrap;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .controls {
-                flex-direction: column;
-            }
-            
-            .search-box {
-                min-width: auto;
-            }
-            
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .customer-table {
-                overflow-x: auto;
-            }
-            
-            table {
-                min-width: 600px;
-            }
-            
-            .modal-content {
-                padding: 20px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Customer Management System</h1>
-        </div>
-        
-        <!-- Summary Cards -->
-        <div class="summary-cards">
-            <div class="card">
-                <h3>Total Customers</h3>
-                <div class="value total-customers" id="totalCustomers">0</div>
+            border間に
+
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Customer Management System</h1>
             </div>
-            <div class="card">
-                <h3>Total Amount Given</h3>
-                <div class="value total-given" id="totalGiven">₹0.00</div>
-            </div>
-            <div class="card">
-                <h3>Total Balance</h3>
-                <div class="value total-balance" id="totalBalance">₹0.00</div>
-            </div>
-            <div class="card">
-                <h3>Total Amount to be Received</h3>
-                <div class="value total-receivable" id="totalReceivable">₹0.00</div>
-            </div>
-        </div>
-        
-        <!-- Controls -->
-        <div class="controls">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search by mobile number or name...">
-                <span class="search-icon">🔍</span>
-            </div>
-            <button class="btn btn-primary" onclick="showAddForm()">
-                ➕ Add Customer
-            </button>
-        </div>
-        
-        <!-- Add/Edit Customer Form -->
-        <div class="form-section" id="customerForm">
-            <h2 id="formTitle">Add New Customer</h2>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="customerName">Customer Name *</label>
-                    <input type="text" id="customerName" required>
+            
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>Total Customers</h3>
+                    <div class="value total-customers" id="totalCustomers">0</div>
                 </div>
-                <div class="form-group">
-                    <label for="customerMobile">Mobile Number *</label>
-                    <input type="tel" id="customerMobile" required>
+                <div class="card">
+                    <h3>Total Amount Given</h3>
+                    <div class="value total-given" id="totalGiven">₹0.00</div>
                 </div>
-                <div class="form-group">
-                    <label for="productBought">Product Bought *</label>
-                    <input type="text" id="productBought" required>
-                </div>
-                <div class="form-group">
-                    <label for="amountGiven">Amount Given</label>
-                    <input type="number" id="amountGiven" min="0" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label for="amountBalance">Amount Balance</label>
-                    <input type="number" id="amountBalance" min="0" step="0.01">
+                <div class="card">
+                    <h3>Total Balance</h3>
+                    <div class="value total-balance" id="totalBalance">₹0.00</div>
                 </div>
             </div>
-            <div class="form-actions">
-                <button class="btn btn-success" onclick="saveCustomer()">
-                    <span id="saveButtonText">Add Customer</span>
-                </button>
-                <button class="btn btn-secondary" onclick="hideAddForm()">
-                    Cancel
+            
+            <!-- Controls -->
+            <div class="controls">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search by mobile number or name...">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button class="btn btn-primary" onclick="showAddForm()">
+                    ➕ Add Customer
                 </button>
             </div>
-        </div>
-        
-        <!-- Customer Table -->
-        <div class="customer-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Customer Details</th>
-                        <th>Product</th>
-                        <th>Amounts</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="customerTableBody">
-                    <!-- Customer rows will be inserted here -->
-                </tbody>
-            </table>
-            <div class="no-data" id="noDataMessage" style="display: none;">
-                No customers found.
-            </div>
-        </div>
-    </div>
-    
-    <!-- Ledger Modal -->
-    <div class="modal" id="ledgerModal">
-        <div class="modal-content">
-            <div class="modal-header">Customer Ledger</div>
-            <div class="ledger-info" id="ledgerInfo">
-                <!-- Ledger details will be inserted here -->
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-success" onclick="sendLedgerToMobile()">
-                    📱 Send to Mobile
-                </button>
-                <button class="btn btn-secondary" onclick="closeLedgerModal()">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        let customers = [];
-        let currentEditingId = null;
-        let currentLedgerCustomer = null;
-        
-        // Load data from localStorage on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCustomers();
-            updateSummary();
-            renderCustomerTable();
             
-            // Add search functionality
-            document.getElementById('searchInput').addEventListener('input', function() {
+            <!-- Add/Edit Customer Form -->
+            <div class="form-section" id="customerForm">
+                <h2 id="formTitle">Add New Customer</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="customerName">Customer Name *</label>
+                        <input type="text" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerMobile">Mobile Number *</label>
+                        <input type="tel" id="customerMobile" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productBought">Product Bought *</label>
+                        <input type="text" id="productBought" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="amountGiven">Amount Given</label>
+                        <input type="number" id="amountGiven" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="amountBalance">Amount Balance</label>
+                        <input type="number" id="amountBalance" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success" onclick="saveCustomer()">
+                        <span id="saveButtonText">Add Customer</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="hideAddForm()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Customer Table -->
+            <div class="customer-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer Details</th>
+                            <th>Product</th>
+                            <th>Amounts</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerTableBody">
+                        <!-- Customer rows will be inserted here -->
+                    </tbody>
+                </table>
+                <div class="no-data" id="noDataMessage" style="display: none;">
+                    No customers found.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ledger Modal -->
+        <div class="modal" id="ledgerModal">
+            <div class="modal-content">
+                <div class="modal-header">Customer Ledger</div>
+                <div class="ledger-info" id="ledgerInfo">
+                    <!-- Ledger details will be inserted here -->
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-success" onclick="sendLedgerToMobile()">
+                        📱 Send to Mobile
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeLedgerModal()">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            let customers = [];
+            let currentEditingId = null;
+            let currentLedgerCustomer = null;
+            
+            // Load data from localStorage on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                loadCustomers();
+                updateSummary();
                 renderCustomerTable();
+                
+                // Add search functionality
+                document.getElementById('searchInput').addEventListener('input', function() {
+                    renderCustomerTable();
+                });
             });
-        });
-        
-        // Load customers from localStorage
-        function loadCustomers() {
-            const savedCustomers = localStorage.getItem('customerData');
-            if (savedCustomers) {
-                customers = JSON.parse(savedCustomers);
-            }
-        }
-        
-        // Save customers to localStorage
-        function saveCustomersToStorage() {
-            localStorage.setItem('customerData', JSON.stringify(customers));
-        }
-        
-        // Show add form
-        function showAddForm() {
-            document.getElementById('customerForm').classList.add('show');
-            document.getElementById('formTitle').textContent = 'Add New Customer';
-            document.getElementById('saveButtonText').textContent = 'Add Customer';
-            currentEditingId = null;
-            clearForm();
-        }
-        
-        // Hide add form
-        function hideAddForm() {
-            document.getElementById('customerForm').classList.remove('show');
-            currentEditingId = null;
-            clearForm();
-        }
-        
-        // Clear form fields
-        function clearForm() {
-            document.getElementById('customerName').value = '';
-            document.getElementById('customerMobile').value = '';
-            document.getElementById('productBought').value = '';
-            document.getElementById('amountGiven').value = '';
-            document.getElementById('amountBalance').value = '';
-        }
-        
-        // Save customer
-        function saveCustomer() {
-            const name = document.getElementById('customerName').value.trim();
-            const mobile = document.getElementById('customerMobile').value.trim();
-            const product = document.getElementById('productBought').value.trim();
-            const amountGiven = parseFloat(document.getElementById('amountGiven').value) || 0;
-            const amountBalance = parseFloat(document.getElementById('amountBalance').value) || 0;
             
-            if (!name || !mobile || !product) {
-                alert('Please fill all required fields');
-                return;
+            // Load customers from localStorage
+            function loadCustomers() {
+                const savedCustomers = localStorage.getItem('customerData');
+                if (savedCustomers) {
+                    customers = JSON.parse(savedCustomers);
+                }
             }
             
-            const customerData = {
-                id: currentEditingId || Date.now(),
-                name: name,
-                mobile: mobile,
-                product: product,
-                amountGiven: amountGiven,
-                amountBalance: amountBalance,
-                timestamp: currentEditingId ? 
-                    customers.find(c => c.id === currentEditingId).timestamp : 
-                    new Date().toISOString()
-            };
-            
-            if (currentEditingId) {
-                // Update existing customer
-                const index = customers.findIndex(c => c.id === currentEditingId);
-                customers[index] = customerData;
-            } else {
-                // Add new customer
-                customers.push(customerData);
+            // Save customers to localStorage
+            function saveCustomersToStorage() {
+                localStorage.setItem('customerData', JSON.stringify(customers));
             }
             
-            saveCustomersToStorage();
-            updateSummary();
-            renderCustomerTable();
-            hideAddForm();
-        }
-        
-        // Edit customer
-        function editCustomer(id) {
-            const customer = customers.find(c => c.id === id);
-            if (!customer) return;
+            // Show add form
+            function showAddForm() {
+                document.getElementById('customerForm').classList.add('show');
+                document.getElementById('formTitle').textContent = 'Add New Customer';
+                document.getElementById('saveButtonText').textContent = 'Add Customer';
+                currentEditingId = null;
+                clearForm();
+            }
             
-            currentEditingId = id;
-            document.getElementById('customerName').value = customer.name;
-            document.getElementById('customerMobile').value = customer.mobile;
-            document.getElementById('productBought').value = customer.product;
-            document.getElementById('amountGiven').value = customer.amountGiven;
-            document.getElementById('amountBalance').value = customer.amountBalance;
+            // Hide add form
+            function hideAddForm() {
+                document.getElementById('customerForm').classList.remove('show');
+                currentEditingId = null;
+                clearForm();
+            }
             
-            document.getElementById('formTitle').textContent = 'Edit Customer';
-            document.getElementById('saveButtonText').textContent = 'Update Customer';
-            document.getElementById('customerForm').classList.add('show');
-        }
-        
-        // Delete customer
-        function deleteCustomer(id) {
-            if (confirm('Are you sure you want to delete this customer?')) {
-                customers = customers.filter(c => c.id !== id);
+            // Clear form fields
+            function clearForm() {
+                document.getElementById('customerName').value = '';
+                document.getElementById('customerMobile').value = '';
+                document.getElementById('productBought').value = '';
+                document.getElementById('amountGiven').value = '';
+                document.getElementById('amountBalance').value = '';
+            }
+            
+            // Save customer
+            function saveCustomer() {
+                const name = document.getElementById('customerName').value.trim();
+                const mobile = document.getElementById('customerMobile').value.trim();
+                const product = document.getElementById('productBought').value.trim();
+                const amountGiven = parseFloat(document.getElementById('amountGiven').value) || 0;
+                const amountBalance = parseFloat(document.getElementById('amountBalance').value) || 0;
+                
+                if (!name || !mobile || !product) {
+                    alert('Please fill all required fields');
+                    return;
+                }
+                
+                const customerData = {
+                    id: currentEditingId || Date.now(),
+                    name: name,
+                    mobile: mobile,
+                    product: product,
+                    amountGiven: amountGiven,
+                    amountBalance: amountBalance,
+                    timestamp: currentEditingId ? 
+                        customers.find(c => c.id === currentEditingId).timestamp : 
+                        new Date().toISOString()
+                };
+                
+                if (currentEditingId) {
+                    // Update existing customer
+                    const index = customers.findIndex(c => c.id === currentEditingId);
+                    customers[index] = customerData;
+                } else {
+                    // Add new customer
+                    customers.push(customerData);
+                }
+                
                 saveCustomersToStorage();
                 updateSummary();
                 renderCustomerTable();
+                hideAddForm();
             }
-        }
-        
-        // View ledger
-        function viewLedger(id) {
-            const customer = customers.find(c => c.id === id);
-            if (!customer) return;
             
-            currentLedgerCustomer = customer;
+            // Edit customer
+            function editCustomer(id) {
+                const customer = customers.find(c => c.id === id);
+                if (!customer) return;
+                
+                currentEditingId = id;
+                document.getElementById('customerName').value = customer.name;
+                document.getElementById('customerMobile').value = customer.mobile;
+                document.getElementById('productBought').value = customer.product;
+                document.getElementById('amountGiven').value = customer.amountGiven;
+                document.getElementById('amountBalance').value = customer.amountBalance;
+                
+                document.getElementById('formTitle').textContent = 'Edit Customer';
+                document.getElementById('saveButtonText').textContent = 'Update Customer';
+                document.getElementById('customerForm').classList.add('show');
+            }
             
-            const ledgerInfo = document.getElementById('ledgerInfo');
-            ledgerInfo.innerHTML = `
-                <div><strong>Name:</strong> ${customer.name}</div>
-                <div><strong>Mobile:</strong> ${customer.mobile}</div>
-                <div><strong>Product:</strong> ${customer.product}</div>
-                <div><strong>Amount Given:</strong> ₹${customer.amountGiven.toFixed(2)}</div>
-                <div><strong>Amount Balance:</strong> ₹${customer.amountBalance.toFixed(2)}</div>
-                <div><strong>Date:</strong> ${new Date(customer.timestamp).toLocaleDateString()}</div>
-            `;
+            // Delete customer
+            function deleteCustomer(id) {
+                if (confirm('Are you sure you want to delete this customer?')) {
+                    customers = customers.filter(c => c.id !== id);
+                    saveCustomersToStorage();
+                    updateSummary();
+                    renderCustomerTable();
+                }
+            }
             
-            document.getElementById('ledgerModal').classList.add('show');
-        }
-        
-        // Send ledger to mobile
-        function sendLedgerToMobile() {
-            if (!currentLedgerCustomer) return;
+            // View ledger
+            function viewLedger(id) {
+                const customer = customers.find(c => c.id === id);
+                if (!customer) return;
+                
+                currentLedgerCustomer = customer;
+                
+                const ledgerInfo = document.getElementById('ledgerInfo');
+                ledgerInfo.innerHTML = `
+                    <div><strong>Name:</strong> ${customer.name}</div>
+                    <div><strong>Mobile:</strong> ${customer.mobile}</div>
+                    <div><strong>Product:</strong> ${customer.product}</div>
+                    <div><strong>Amount Given:</strong> ₹${customer.amountGiven.toFixed(2)}</div>
+                    <div><strong>Amount Balance:</strong> ₹${customer.amountBalance.toFixed(2)}</div>
+                    <div><strong>Date:</strong> ${new Date(customer.timestamp).toLocaleDateString()}</div>
+                `;
+                
+                document.getElementById('ledgerModal').classList.add('show');
+            }
             
-            const ledgerText = `
+            // Send ledger to mobile
+            function sendLedgerToMobile() {
+                if (!currentLedgerCustomer) return;
+                
+                const ledgerText = `
 Customer Ledger
 Name: ${currentLedgerCustomer.name}
 Mobile: ${currentLedgerCustomer.mobile}
@@ -657,95 +610,93 @@ Product: ${currentLedgerCustomer.product}
 Amount Given: ₹${currentLedgerCustomer.amountGiven.toFixed(2)}
 Amount Balance: ₹${currentLedgerCustomer.amountBalance.toFixed(2)}
 Date: ${new Date(currentLedgerCustomer.timestamp).toLocaleDateString()}
-            `;
+                `;
 
-            // In a real app, you would integrate with an SMS service
-            alert(`Ledger details would be sent to ${currentLedgerCustomer.mobile}:${ledgerText}`);
-        }
-        
-        // Close ledger modal
-        function closeLedgerModal() {
-            document.getElementById('ledgerModal').classList.remove('show');
-            currentLedgerCustomer = null;
-        }
-        
-        // Update summary cards
-        function updateSummary() {
-            const totalCustomers = customers.length;
-            const totalGiven = customers.reduce((sum, customer) => sum + customer.amountGiven, 0);
-            const totalBalance = customers.reduce((sum, customer) => sum + customer.amountBalance, 0);
-            const totalReceivable = customers.reduce((sum, customer) => sum + customer.amountBalance, 0);
-            
-            document.getElementById('totalCustomers').textContent = totalCustomers;
-            document.getElementById('totalGiven').textContent = `₹${totalGiven.toFixed(2)}`;
-            document.getElementById('totalBalance').textContent = `₹${totalBalance.toFixed(2)}`;
-            document.getElementById('totalReceivable').textContent = `₹${totalReceivable.toFixed(2)}`;
-        }
-        
-        // Render customer table
-        function renderCustomerTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filteredCustomers = customers.filter(customer =>
-                customer.mobile.includes(searchTerm) ||
-                customer.name.toLowerCase().includes(searchTerm)
-            );
-            
-            const tableBody = document.getElementById('customerTableBody');
-            const noDataMessage = document.getElementById('noDataMessage');
-            
-            if (filteredCustomers.length === 0) {
-                tableBody.innerHTML = '';
-                noDataMessage.style.display = 'block';
-                noDataMessage.textContent = searchTerm ? 
-                    'No customers found matching your search.' : 
-                    'No customers added yet.';
-                return;
+                // In a real app, you would integrate with an SMS service
+                alert(`Ledger details would be sent to ${currentLedgerCustomer.mobile}:${ledgerText}`);
             }
             
-            noDataMessage.style.display = 'none';
+            // Close ledger modal
+            function closeLedgerModal() {
+                document.getElementById('ledgerModal').classList.remove('show');
+                currentLedgerCustomer = null;
+            }
             
-            tableBody.innerHTML = filteredCustomers.map(customer => `
-                <tr>
-                    <td>
-                        <div class="customer-info">
-                            <div class="customer-name">${customer.name}</div>
-                            <div class="customer-mobile">${customer.mobile}</div>
-                            <div class="customer-date">${new Date(customer.timestamp).toLocaleDateString()}</div>
-                        </div>
-                    </td>
-                    <td>${customer.product}</td>
-                    <td>
-                        <div class="amounts">
-                            <div class="amount-given">Given: ₹${customer.amountGiven.toFixed(2)}</div>
-                            <div class="amount-balance">Balance: ₹${customer.amountBalance.toFixed(2)}</div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="actions">
-                            <button class="action-btn view-btn" onclick="viewLedger(${customer.id})" title="View Ledger">
-                                👁️
-                            </button>
-                            <button class="action-btn send-btn" onclick="sendLedgerDirectly(${customer.id})" title="Send to Mobile">
-                                📱
-                            </button>
-                            <button class="action-btn edit-btn" onclick="editCustomer(${customer.id})" title="Edit">
-                                ✏️
-                            </button>
-                            <button class="action-btn delete-btn" onclick="deleteCustomer(${customer.id})" title="Delete">
-                                🗑️
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        // Send ledger directly without modal
-        function sendLedgerDirectly(id) {
-            const customer = customers.find(c => c.id === id);
-            if (!customer) return;
+            // Update summary cards
+            function updateSummary() {
+                const totalCustomers = customers.length;
+                const totalGiven = customers.reduce((sum, customer) => sum + customer.amountGiven, 0);
+                const totalBalance = customers.reduce((sum, customer) => sum + customer.amountBalance, 0);
+                
+                document.getElementById('totalCustomers').textContent = totalCustomers;
+                document.getElementById('totalGiven').textContent = `₹${totalGiven.toFixed(2)}`;
+                document.getElementById('totalBalance').textContent = `₹${totalBalance.toFixed(2)}`;
+            }
             
-            const ledgerText = `
+            // Render customer table
+            function renderCustomerTable() {
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                const filteredCustomers = customers.filter(customer =>
+                    customer.mobile.includes(searchTerm) ||
+                    customer.name.toLowerCase().includes(searchTerm)
+                );
+                
+                const tableBody = document.getElementById('customerTableBody');
+                const noDataMessage = document.getElementById('noDataMessage');
+                
+                if (filteredCustomers.length === 0) {
+                    tableBody.innerHTML = '';
+                    noDataMessage.style.display = 'block';
+                    noDataMessage.textContent = searchTerm ? 
+                        'No customers found matching your search.' : 
+                        'No customers added yet.';
+                    return;
+                }
+                
+                noDataMessage.style.display = 'none';
+                
+                tableBody.innerHTML = filteredCustomers.map(customer => `
+                    <tr>
+                        <td>
+                            <div class="customer-info">
+                                <div class="customer-name">${customer.name}</div>
+                                <div class="customer-mobile">${customer.mobile}</div>
+                                <div class="customer-date">${new Date(customer.timestamp).toLocaleDateString()}</div>
+                            </div>
+                        </td>
+                        <td>${customer.product}</td>
+                        <td>
+                            <div class="amounts">
+                                <div class="amount-given">Given: ₹${customer.amountGiven.toFixed(2)}</div>
+                                <div class="amount-balance">Balance: ₹${customer.amountBalance.toFixed(2)}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn view-btn" onclick="viewLedger(${customer.id})" title="View Ledger">
+                                    👁️
+                                </button>
+                                <button class="action-btn send-btn" onclick="sendLedgerDirectly(${customer.id})" title="Send to Mobile">
+                                    📱
+                                </button>
+                                <button class="action-btn edit-btn" onclick="editCustomer(${customer.id})" title="Edit">
+                                    ✏️
+                                </button>
+                                <button class="action-btn delete-btn" onclick="deleteCustomer(${customer.id})" title="Delete">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Send ledger directly without modal
+            function sendLedgerDirectly(id) {
+                const customer = customers.find(c => c.id === id);
+                if (!customer) return;
+                
+                const ledgerText = `
 Customer Ledger
 Name: ${customer.name}
 Mobile: ${customer.mobile}
@@ -753,18 +704,18 @@ Product: ${customer.product}
 Amount Given: ₹${customer.amountGiven.toFixed(2)}
 Amount Balance: ₹${customer.amountBalance.toFixed(2)}
 Date: ${new Date(customer.timestamp).toLocaleDateString()}
-            `;
+                `;
 
-            alert(`Ledger details would be sent to ${customer.mobile}:${ledgerText}`);
-        }
-        
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('ledgerModal');
-            if (event.target === modal) {
-                closeLedgerModal();
+                alert(`Ledger details would be sent to ${customer.mobile}:${ledgerText}`);
             }
-        }
-    </script>
-</body>
+            
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modal = document.getElementById('ledgerModal');
+                if (event.target === modal) {
+                    closeLedgerModal();
+                }
+            }
+        </script>
+    </body>
 </html>
