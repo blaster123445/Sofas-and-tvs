@@ -1,390 +1,763 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Eye, Send, Trash2, Edit } from 'lucide-react';
-
-const CustomerManagementApp = () => {
-  const [customers, setCustomers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showLedger, setShowLedger] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [editingCustomer, setEditingCustomer] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    mobile: '',
-    product: '',
-    amountGiven: '',
-    amountBalance: ''
-  });
-
-  // Load data from localStorage on component mount
-  useEffect(() => {
-    const savedCustomers = localStorage.getItem('customerData');
-    if (savedCustomers) {
-      setCustomers(JSON.parse(savedCustomers));
-    }
-  }, []);
-
-  // Save data to localStorage whenever customers state changes
-  useEffect(() => {
-    localStorage.setItem('customerData', JSON.stringify(customers));
-  }, [customers]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = () => {
-    if (!formData.name || !formData.mobile || !formData.product) {
-      alert('Please fill all required fields');
-      return;
-    }
-
-    const customerData = {
-      id: editingCustomer ? editingCustomer.id : Date.now(),
-      name: formData.name,
-      mobile: formData.mobile,
-      product: formData.product,
-      amountGiven: parseFloat(formData.amountGiven) || 0,
-      amountBalance: parseFloat(formData.amountBalance) || 0,
-      timestamp: editingCustomer ? editingCustomer.timestamp : new Date().toISOString()
-    };
-
-    if (editingCustomer) {
-      setCustomers(prev => prev.map(customer => 
-        customer.id === editingCustomer.id ? customerData : customer
-      ));
-      setEditingCustomer(null);
-    } else {
-      setCustomers(prev => [...prev, customerData]);
-    }
-
-    setFormData({
-      name: '',
-      mobile: '',
-      product: '',
-      amountGiven: '',
-      amountBalance: ''
-    });
-    setShowAddForm(false);
-  };
-
-  const handleEdit = (customer) => {
-    setEditingCustomer(customer);
-    setFormData({
-      name: customer.name,
-      mobile: customer.mobile,
-      product: customer.product,
-      amountGiven: customer.amountGiven.toString(),
-      amountBalance: customer.amountBalance.toString()
-    });
-    setShowAddForm(true);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this customer?')) {
-      setCustomers(prev => prev.filter(customer => customer.id !== id));
-    }
-  };
-
-  const filteredCustomers = customers.filter(customer =>
-    customer.mobile.includes(searchTerm) ||
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const viewLedger = (customer) => {
-    setSelectedCustomer(customer);
-    setShowLedger(true);
-  };
-
-  const sendLedgerToMobile = (customer) => {
-    const ledgerText = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9fafb;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #1f2937;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            color: #6b7280;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .card .value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .card .total-customers { color: #3b82f6; }
+        .card .total-given { color: #10b981; }
+        .card .total-balance { color: #ef4444; }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        
+        .btn-success {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #059669;
+        }
+        
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        
+        .form-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: none;
+        }
+        
+        .form-section.show {
+            display: block;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .customer-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background-color: #f9fafb;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .customer-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .customer-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .customer-mobile {
+            color: #6b7280;
+        }
+        
+        .customer-date {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+        
+        .amounts {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .amount-given {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .amount-balance {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .view-btn {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .send-btn {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .edit-btn {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        .delete-btn {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #6b7280;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+        
+        .ledger-info {
+            margin-bottom: 20px;
+        }
+        
+        .ledger-info div {
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .ledger-info strong {
+            color: #374151;
+            margin-right: 10px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                min-width: auto;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .customer-table {
+                overflow-x: auto;
+            }
+            
+            table {
+                min-width: 600px;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Customer Management System</h1>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="card">
+                <h3>Total Customers</h3>
+                <div class="value total-customers" id="totalCustomers">0</div>
+            </div>
+            <div class="card">
+                <h3>Total Amount Given</h3>
+                <div class="value total-given" id="totalGiven">₹0.00</div>
+            </div>
+            <div class="card">
+                <h3>Total Balance</h3>
+                <div class="value total-balance" id="totalBalance">₹0.00</div>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by mobile number or name...">
+                <span class="search-icon">🔍</span>
+            </div>
+            <button class="btn btn-primary" onclick="showAddForm()">
+                ➕ Add Customer
+            </button>
+        </div>
+        
+        <!-- Add/Edit Customer Form -->
+        <div class="form-section" id="customerForm">
+            <h2 id="formTitle">Add New Customer</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="customerName">Customer Name *</label>
+                    <input type="text" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerMobile">Mobile Number *</label>
+                    <input type="tel" id="customerMobile" required>
+                </div>
+                <div class="form-group">
+                    <label for="productBought">Product Bought *</label>
+                    <input type="text" id="productBought" required>
+                </div>
+                <div class="form-group">
+                    <label for="amountGiven">Amount Given</label>
+                    <input type="number" id="amountGiven" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="amountBalance">Amount Balance</label>
+                    <input type="number" id="amountBalance" min="0" step="0.01">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success" onclick="saveCustomer()">
+                    <span id="saveButtonText">Add Customer</span>
+                </button>
+                <button class="btn btn-secondary" onclick="hideAddForm()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+        
+        <!-- Customer Table -->
+        <div class="customer-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Customer Details</th>
+                        <th>Product</th>
+                        <th>Amounts</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customerTableBody">
+                    <!-- Customer rows will be inserted here -->
+                </tbody>
+            </table>
+            <div class="no-data" id="noDataMessage" style="display: none;">
+                No customers found.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ledger Modal -->
+    <div class="modal" id="ledgerModal">
+        <div class="modal-content">
+            <div class="modal-header">Customer Ledger</div>
+            <div class="ledger-info" id="ledgerInfo">
+                <!-- Ledger details will be inserted here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-success" onclick="sendLedgerToMobile()">
+                    📱 Send to Mobile
+                </button>
+                <button class="btn btn-secondary" onclick="closeLedgerModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let customers = [];
+        let currentEditingId = null;
+        let currentLedgerCustomer = null;
+        
+        // Load data from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCustomers();
+            updateSummary();
+            renderCustomerTable();
+            
+            // Add search functionality
+            document.getElementById('searchInput').addEventListener('input', function() {
+                renderCustomerTable();
+            });
+        });
+        
+        // Load customers from localStorage
+        function loadCustomers() {
+            const savedCustomers = localStorage.getItem('customerData');
+            if (savedCustomers) {
+                customers = JSON.parse(savedCustomers);
+            }
+        }
+        
+        // Save customers to localStorage
+        function saveCustomersToStorage() {
+            localStorage.setItem('customerData', JSON.stringify(customers));
+        }
+        
+        // Show add form
+        function showAddForm() {
+            document.getElementById('customerForm').classList.add('show');
+            document.getElementById('formTitle').textContent = 'Add New Customer';
+            document.getElementById('saveButtonText').textContent = 'Add Customer';
+            currentEditingId = null;
+            clearForm();
+        }
+        
+        // Hide add form
+        function hideAddForm() {
+            document.getElementById('customerForm').classList.remove('show');
+            currentEditingId = null;
+            clearForm();
+        }
+        
+        // Clear form fields
+        function clearForm() {
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerMobile').value = '';
+            document.getElementById('productBought').value = '';
+            document.getElementById('amountGiven').value = '';
+            document.getElementById('amountBalance').value = '';
+        }
+        
+        // Save customer
+        function saveCustomer() {
+            const name = document.getElementById('customerName').value.trim();
+            const mobile = document.getElementById('customerMobile').value.trim();
+            const product = document.getElementById('productBought').value.trim();
+            const amountGiven = parseFloat(document.getElementById('amountGiven').value) || 0;
+            const amountBalance = parseFloat(document.getElementById('amountBalance').value) || 0;
+            
+            if (!name || !mobile || !product) {
+                alert('Please fill all required fields');
+                return;
+            }
+            
+            const customerData = {
+                id: currentEditingId || Date.now(),
+                name: name,
+                mobile: mobile,
+                product: product,
+                amountGiven: amountGiven,
+                amountBalance: amountBalance,
+                timestamp: currentEditingId ? 
+                    customers.find(c => c.id === currentEditingId).timestamp : 
+                    new Date().toISOString()
+            };
+            
+            if (currentEditingId) {
+                // Update existing customer
+                const index = customers.findIndex(c => c.id === currentEditingId);
+                customers[index] = customerData;
+            } else {
+                // Add new customer
+                customers.push(customerData);
+            }
+            
+            saveCustomersToStorage();
+            updateSummary();
+            renderCustomerTable();
+            hideAddForm();
+        }
+        
+        // Edit customer
+        function editCustomer(id) {
+            const customer = customers.find(c => c.id === id);
+            if (!customer) return;
+            
+            currentEditingId = id;
+            document.getElementById('customerName').value = customer.name;
+            document.getElementById('customerMobile').value = customer.mobile;
+            document.getElementById('productBought').value = customer.product;
+            document.getElementById('amountGiven').value = customer.amountGiven;
+            document.getElementById('amountBalance').value = customer.amountBalance;
+            
+            document.getElementById('formTitle').textContent = 'Edit Customer';
+            document.getElementById('saveButtonText').textContent = 'Update Customer';
+            document.getElementById('customerForm').classList.add('show');
+        }
+        
+        // Delete customer
+        function deleteCustomer(id) {
+            if (confirm('Are you sure you want to delete this customer?')) {
+                customers = customers.filter(c => c.id !== id);
+                saveCustomersToStorage();
+                updateSummary();
+                renderCustomerTable();
+            }
+        }
+        
+        // View ledger
+        function viewLedger(id) {
+            const customer = customers.find(c => c.id === id);
+            if (!customer) return;
+            
+            currentLedgerCustomer = customer;
+            
+            const ledgerInfo = document.getElementById('ledgerInfo');
+            ledgerInfo.innerHTML = `
+                <div><strong>Name:</strong> ${customer.name}</div>
+                <div><strong>Mobile:</strong> ${customer.mobile}</div>
+                <div><strong>Product:</strong> ${customer.product}</div>
+                <div><strong>Amount Given:</strong> ₹${customer.amountGiven.toFixed(2)}</div>
+                <div><strong>Amount Balance:</strong> ₹${customer.amountBalance.toFixed(2)}</div>
+                <div><strong>Date:</strong> ${new Date(customer.timestamp).toLocaleDateString()}</div>
+            `;
+            
+            document.getElementById('ledgerModal').classList.add('show');
+        }
+        
+        // Send ledger to mobile
+        function sendLedgerToMobile() {
+            if (!currentLedgerCustomer) return;
+            
+            const ledgerText = `
+Customer Ledger
+Name: ${currentLedgerCustomer.name}
+Mobile: ${currentLedgerCustomer.mobile}
+Product: ${currentLedgerCustomer.product}
+Amount Given: ₹${currentLedgerCustomer.amountGiven.toFixed(2)}
+Amount Balance: ₹${currentLedgerCustomer.amountBalance.toFixed(2)}
+Date: ${new Date(currentLedgerCustomer.timestamp).toLocaleDateString()}
+            `;
+            
+            // In a real app, you would integrate with an SMS service
+            alert(`Ledger details would be sent to ${currentLedgerCustomer.mobile}:${ledgerText}`);
+        }
+        
+        // Close ledger modal
+        function closeLedgerModal() {
+            document.getElementById('ledgerModal').classList.remove('show');
+            currentLedgerCustomer = null;
+        }
+        
+        // Update summary cards
+        function updateSummary() {
+            const totalCustomers = customers.length;
+            const totalGiven = customers.reduce((sum, customer) => sum + customer.amountGiven, 0);
+            const totalBalance = customers.reduce((sum, customer) => sum + customer.amountBalance, 0);
+            
+            document.getElementById('totalCustomers').textContent = totalCustomers;
+            document.getElementById('totalGiven').textContent = `₹${totalGiven.toFixed(2)}`;
+            document.getElementById('totalBalance').textContent = `₹${totalBalance.toFixed(2)}`;
+        }
+        
+        // Render customer table
+        function renderCustomerTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filteredCustomers = customers.filter(customer =>
+                customer.mobile.includes(searchTerm) ||
+                customer.name.toLowerCase().includes(searchTerm)
+            );
+            
+            const tableBody = document.getElementById('customerTableBody');
+            const noDataMessage = document.getElementById('noDataMessage');
+            
+            if (filteredCustomers.length === 0) {
+                tableBody.innerHTML = '';
+                noDataMessage.style.display = 'block';
+                noDataMessage.textContent = searchTerm ? 
+                    'No customers found matching your search.' : 
+                    'No customers added yet.';
+                return;
+            }
+            
+            noDataMessage.style.display = 'none';
+            
+            tableBody.innerHTML = filteredCustomers.map(customer => `
+                <tr>
+                    <td>
+                        <div class="customer-info">
+                            <div class="customer-name">${customer.name}</div>
+                            <div class="customer-mobile">${customer.mobile}</div>
+                            <div class="customer-date">${new Date(customer.timestamp).toLocaleDateString()}</div>
+                        </div>
+                    </td>
+                    <td>${customer.product}</td>
+                    <td>
+                        <div class="amounts">
+                            <div class="amount-given">Given: ₹${customer.amountGiven.toFixed(2)}</div>
+                            <div class="amount-balance">Balance: ₹${customer.amountBalance.toFixed(2)}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <button class="action-btn view-btn" onclick="viewLedger(${customer.id})" title="View Ledger">
+                                👁️
+                            </button>
+                            <button class="action-btn send-btn" onclick="sendLedgerDirectly(${customer.id})" title="Send to Mobile">
+                                📱
+                            </button>
+                            <button class="action-btn edit-btn" onclick="editCustomer(${customer.id})" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteCustomer(${customer.id})" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Send ledger directly without modal
+        function sendLedgerDirectly(id) {
+            const customer = customers.find(c => c.id === id);
+            if (!customer) return;
+            
+            const ledgerText = `
 Customer Ledger
 Name: ${customer.name}
 Mobile: ${customer.mobile}
 Product: ${customer.product}
-Amount Given: ₹${customer.amountGiven}
-Amount Balance: ₹${customer.amountBalance}
+Amount Given: ₹${customer.amountGiven.toFixed(2)}
+Amount Balance: ₹${customer.amountBalance.toFixed(2)}
 Date: ${new Date(customer.timestamp).toLocaleDateString()}
-    `;
-    
-    // In a real app, you would integrate with an SMS service
-    alert(`Ledger details would be sent to ${customer.mobile}:\n${ledgerText}`);
-  };
-
-  const totalGiven = customers.reduce((sum, customer) => sum + customer.amountGiven, 0);
-  const totalBalance = customers.reduce((sum, customer) => sum + customer.amountBalance, 0);
-
-  return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Customer Management System</h1>
-      
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700">Total Customers</h3>
-          <p className="text-3xl font-bold text-blue-600">{customers.length}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700">Total Amount Given</h3>
-          <p className="text-3xl font-bold text-green-600">₹{totalGiven.toFixed(2)}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700">Total Balance</h3>
-          <p className="text-3xl font-bold text-red-600">₹{totalBalance.toFixed(2)}</p>
-        </div>
-      </div>
-
-      {/* Search and Add Button */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by mobile number or name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <button
-          onClick={() => {
-            setShowAddForm(true);
-            setEditingCustomer(null);
-            setFormData({
-              name: '',
-              mobile: '',
-              product: '',
-              amountGiven: '',
-              amountBalance: ''
-            });
-          }}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Add Customer
-        </button>
-      </div>
-
-      {/* Add/Edit Customer Form */}
-      {showAddForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h2 className="text-xl font-semibold mb-4">
-            {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Customer Name *
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mobile Number *
-              </label>
-              <input
-                type="tel"
-                name="mobile"
-                value={formData.mobile}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product Bought *
-              </label>
-              <input
-                type="text"
-                name="product"
-                value={formData.product}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amount Given
-              </label>
-              <input
-                type="number"
-                name="amountGiven"
-                value={formData.amountGiven}
-                onChange={handleInputChange}
-                min="0"
-                step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amount Balance
-              </label>
-              <input
-                type="number"
-                name="amountBalance"
-                value={formData.amountBalance}
-                onChange={handleInputChange}
-                min="0"
-                step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="md:col-span-2 flex gap-4">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-              >
-                {editingCustomer ? 'Update Customer' : 'Add Customer'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddForm(false);
-                  setEditingCustomer(null);
-                }}
-                className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Customer List */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer Details
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Product
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amounts
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCustomers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                      <div className="text-sm text-gray-500">{customer.mobile}</div>
-                      <div className="text-xs text-gray-400">
-                        {new Date(customer.timestamp).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{customer.product}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      <div className="text-green-600">Given: ₹{customer.amountGiven.toFixed(2)}</div>
-                      <div className="text-red-600">Balance: ₹{customer.amountBalance.toFixed(2)}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => viewLedger(customer)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="View Ledger"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => sendLedgerToMobile(customer)}
-                        className="text-green-600 hover:text-green-900"
-                        title="Send to Mobile"
-                      >
-                        <Send className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(customer)}
-                        className="text-orange-600 hover:text-orange-900"
-                        title="Edit"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(customer.id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            `;
+            
+            alert(`Ledger details would be sent to ${customer.mobile}:${ledgerText}`);
+        }
         
-        {filteredCustomers.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            {searchTerm ? 'No customers found matching your search.' : 'No customers added yet.'}
-          </div>
-        )}
-      </div>
-
-      {/* Ledger Modal */}
-      {showLedger && selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Customer Ledger</h2>
-            <div className="space-y-2">
-              <div><strong>Name:</strong> {selectedCustomer.name}</div>
-              <div><strong>Mobile:</strong> {selectedCustomer.mobile}</div>
-              <div><strong>Product:</strong> {selectedCustomer.product}</div>
-              <div><strong>Amount Given:</strong> ₹{selectedCustomer.amountGiven.toFixed(2)}</div>
-              <div><strong>Amount Balance:</strong> ₹{selectedCustomer.amountBalance.toFixed(2)}</div>
-              <div><strong>Date:</strong> {new Date(selectedCustomer.timestamp).toLocaleDateString()}</div>
-            </div>
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={() => sendLedgerToMobile(selectedCustomer)}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
-              >
-                <Send className="h-4 w-4" />
-                Send to Mobile
-              </button>
-              <button
-                onClick={() => setShowLedger(false)}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default CustomerManagementApp;
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('ledgerModal');
+            if (event.target === modal) {
+                closeLedgerModal();
+            }
+        }
+    </script>
+</body>
+</html>
