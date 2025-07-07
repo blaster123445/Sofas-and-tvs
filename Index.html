@@ -62,6 +62,7 @@
         .card .total-customers { color: #3b82f6; }
         .card .total-given { color: #10b981; }
         .card .total-balance { color: #ef4444; }
+        .card .total-price { color: #8b5cf6; }
         
         .controls {
             display: flex;
@@ -416,6 +417,10 @@
                 <h3>Total Balance</h3>
                 <div class="value total-balance" id="totalBalance">₹0.00</div>
             </div>
+            <div class="card">
+                <h3>Total Price of Products</h3>
+                <div class="value total-price" id="totalPrice">₹0.00</div>
+            </div>
         </div>
         
         <!-- Controls -->
@@ -431,42 +436,38 @@
         
         <!-- Add/Edit Customer Form -->
         <div class="form-section" id="customerForm">
-        <h2 id="formTitle">Add New Customer</h2>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="customerName">Customer Name *</label>
-                <input type="text" id="customerName" required>
+            <h2 id="formTitle">Add New Customer</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="customerName">Customer Name *</label>
+                    <input type="text" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerMobile">Mobile Number *</label>
+                    <input type="tel" id="customerMobile" required>
+                </div>
+                <div class="form-group">
+                    <label for="productBought">Product Bought *</label>
+                    <input type="text" id="productBought" required>
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Price of Product *</label>
+                    <input type="number" id="productPrice" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="amountGiven">Amount Given</label>
+                    <input type="number" id="amountGiven" min="0" step="0.01">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="customerMobile">Mobile Number *</label>
-                <input type="tel" id="customerMobile" required>
-            </div>
-            <div class="form-group">
-                <label for="productBought">Product Bought *</label>
-                <input type="text" id="productBought" required>
-            </div>
-            <div class="form-group">
-                <label for="productPrice">Price of Product *</label>
-                <input type="number" id="productPrice" min="0" step="0.01" required>
-            </div>
-            <div class="form-group">
-                <label for="amountGiven">Amount Given</label>
-                <input type="number" id="amountGiven" min="0" step="0.01">
-            </div>
-            <div class="form-group">
-                <label for="amountBalance">Amount Balance</label>
-                <input type="number" id="amountBalance" min="0" step="0.01">
+            <div class="form-actions">
+                <button class="btn btn-success" onclick="saveCustomer()">
+                    <span id="saveButtonText">Add Customer</span>
+                </button>
+                <button class="btn btn-secondary" onclick="hideAddForm()">
+                    Cancel
+                </button>
             </div>
         </div>
-        <div class="form-actions">
-            <button class="btn btn-success" onclick="saveCustomer()">
-                <span id="saveButtonText">Add Customer</span>
-            </button>
-            <button class="btn btn-secondary" onclick="hideAddForm()">
-                Cancel
-            </button>
-        </div>
-    </div>
         
         <!-- Customer Table -->
         <div class="customer-table">
@@ -561,10 +562,8 @@
             document.getElementById('productBought').value = '';
             document.getElementById('productPrice').value = '';
             document.getElementById('amountGiven').value = '';
-            document.getElementById('amountBalance').value = '';
         }
         
-       rapeutics
         // Save customer
         function saveCustomer() {
             const name = document.getElementById('customerName').value.trim();
@@ -572,10 +571,15 @@
             const product = document.getElementById('productBought').value.trim();
             const productPrice = parseFloat(document.getElementById('productPrice').value) || 0;
             const amountGiven = parseFloat(document.getElementById('amountGiven').value) || 0;
-            const amountBalance = parseFloat(document.getElementById('amountBalance').value) || 0;
+            const amountBalance = productPrice - amountGiven; // Calculate balance
             
             if (!name || !mobile || !product || !productPrice) {
                 alert('Please fill all required fields');
+                return;
+            }
+            
+            if (amountBalance < 0) {
+                alert('Amount Given cannot exceed Price of Product');
                 return;
             }
             
@@ -618,7 +622,6 @@
             document.getElementById('productBought').value = customer.product;
             document.getElementById('productPrice').value = customer.productPrice;
             document.getElementById('amountGiven').value = customer.amountGiven;
-            document.getElementById('amountBalance').value = customer.amountBalance;
             
             document.getElementById('formTitle').textContent = 'Edit Customer';
             document.getElementById('saveButtonText').textContent = 'Update Customer';
@@ -685,10 +688,12 @@ Date: ${new Date(currentLedgerCustomer.timestamp).toLocaleDateString()}
             const totalCustomers = customers.length;
             const totalGiven = customers.reduce((sum, customer) => sum + customer.amountGiven, 0);
             const totalBalance = customers.reduce((sum, customer) => sum + customer.amountBalance, 0);
+            const totalPrice = customers.reduce((sum, customer) => sum + customer.productPrice, 0);
             
             document.getElementById('totalCustomers').textContent = totalCustomers;
             document.getElementById('totalGiven').textContent = `₹${totalGiven.toFixed(2)}`;
             document.getElementById('totalBalance').textContent = `₹${totalBalance.toFixed(2)}`;
+            document.getElementById('totalPrice').textContent = `₹${totalPrice.toFixed(2)}`;
         }
         
         // Render customer table
@@ -723,7 +728,7 @@ Date: ${new Date(currentLedgerCustomer.timestamp).toLocaleDateString()}
                         </div>
                     </td>
                     <td>${customer.product}</td>
-                    <td>
+17                    <td>
                         <div class="amount-price">₹${customer.productPrice.toFixed(2)}</div>
                     </td>
                     <td>
