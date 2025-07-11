@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!ivalente HTML>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -432,17 +432,38 @@
 
     <script>
         // Initialize data from localStorage or set defaults
-        let customers = JSON.parse(localStorage.getItem('customers')) || [];
-        let products = JSON.parse(localStorage.getItem('products')) || [];
-        let payments = JSON.parse(localStorage.getItem('payments')) || [];
-        let currentCustomerId = parseInt(localStorage.getItem('currentCustomerId')) || 1;
+        let customers = [];
+        let products = [];
+        let payments = [];
+        let currentCustomerId = 1;
+
+        // Load data from localStorage with error handling
+        try {
+            const storedCustomers = localStorage.getItem('customers');
+            const storedProducts = localStorage.getItem('products');
+            const storedPayments = localStorage.getItem('payments');
+            const storedCustomerId = localStorage.getItem('currentCustomerId');
+
+            customers = storedCustomers ? JSON.parse(storedCustomers) : [];
+            products = storedProducts ? JSON.parse(storedProducts) : [];
+            payments = storedPayments ? JSON.parse(storedPayments) : [];
+            currentCustomerId = storedCustomerId ? parseInt(storedCustomerId) : 1;
+        } catch (e) {
+            console.error('Error loading data from localStorage:', e);
+            alert('Failed to load saved data. Starting with empty data.');
+        }
 
         // Function to save data to localStorage
         function saveToLocalStorage() {
-            localStorage.setItem('customers', JSON.stringify(customers));
-            localStorage.setItem('products', JSON.stringify(products));
-            localStorage.setItem('payments', JSON.stringify(payments));
-            localStorage.setItem('currentCustomerId', currentCustomerId);
+            try {
+                localStorage.setItem('customers', JSON.stringify(customers));
+                localStorage.setItem('products', JSON.stringify(products));
+                localStorage.setItem('payments', JSON.stringify(payments));
+                localStorage.setItem('currentCustomerId', currentCustomerId);
+            } catch (e) {
+                console.error('Error saving data to localStorage:', e);
+                alert('Failed to save data. Your changes may not persist.');
+            }
         }
 
         // Initialize system
@@ -575,6 +596,11 @@
             }
 
             const customer = customers.find(c => c.id === customerId);
+            if (!customer) {
+                alert('Selected customer not found');
+                return;
+            }
+
             const balance = mrp - amountGiven;
 
             const product = {
@@ -626,9 +652,9 @@
                 row.innerHTML = `
                     <td>${product.customerName}</td>
                     <td>${product.productName}</td>
-                    <td>₹${product.mrp}</td>
-                    <td>₹${product.amountGiven}</td>
-                    <td>₹${currentBalance}</td>
+                    <td>₹${product.mrp.toFixed(2)}</td>
+                    <td>₹${product.amountGiven.toFixed(2)}</td>
+                    <td>₹${currentBalance.toFixed(2)}</td>
                     <td>${product.date}</td>
                     <td>
                         <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Delete</button>
@@ -662,6 +688,11 @@
             }
 
             const customer = customers.find(c => c.id === customerId);
+            if (!customer) {
+                document.getElementById('customerBalanceInfo').style.display = 'none';
+                return;
+            }
+
             const customerProducts = products.filter(p => p.customerId === customerId);
             const customerPayments = payments.filter(p => p.customerId === customerId);
 
@@ -687,7 +718,7 @@
             // Calculate current balance
             const currentBalance = totalMRP - totalAmountGiven;
 
-            document.getElementById('currentBalance').textContent = currentBalance;
+            document.getElementById('currentBalance').textContent = currentBalance.toFixed(2);
             document.getElementById('customerBalanceInfo').style.display = 'block';
 
             // Show balance history
@@ -701,9 +732,9 @@
             summaryEntry.style.borderLeft = '4px solid #2196f3';
             summaryEntry.innerHTML = `
                 <div class="payment-date">Balance Summary</div>
-                <div>Total MRP: ₹${totalMRP}</div>
-                <div>Total Amount Given: ₹${totalAmountGiven}</div>
-                <div class="payment-amount">Current Balance: ₹${currentBalance}</div>
+                <div>Total MRP: ₹${totalMRP.toFixed(2)}</div>
+                <div>Total Amount Given: ₹${totalAmountGiven.toFixed(2)}</div>
+                <div class="payment-amount">Current Balance: ₹${currentBalance.toFixed(2)}</div>
             `;
             historyContainer.appendChild(summaryEntry);
 
@@ -714,8 +745,8 @@
                 entry.innerHTML = `
                     <div class="payment-date">Product Purchase - ${product.date}</div>
                     <div>Product: ${product.productName}</div>
-                    <div>MRP: ₹${product.mrp}, Paid During Purchase: ₹${product.amountGiven}</div>
-                    <div class="payment-amount">Product Balance: ₹${product.balance}</div>
+                    <div>MRP: ₹${product.mrp.toFixed(2)}, Paid During Purchase: ₹${product.amountGiven.toFixed(2)}</div>
+                    <div class="payment-amount">Product Balance: ₹${product.balance.toFixed(2)}</div>
                 `;
                 historyContainer.appendChild(entry);
             });
@@ -726,7 +757,7 @@
                 entry.className = 'payment-entry';
                 entry.innerHTML = `
                     <div class="payment-date">Additional Payment - ${payment.date}</div>
-                    <div class="payment-amount">Amount: ₹${payment.amount}</div>
+                    <div class="payment-amount">Amount: ₹${payment.amount.toFixed(2)}</div>
                     <div>Note: ${payment.note || 'No note'}</div>
                 `;
                 historyContainer.appendChild(entry);
@@ -746,6 +777,10 @@
             }
 
             const customer = customers.find(c => c.id === customerId);
+            if (!customer) {
+                alert('Selected customer not found');
+                return;
+            }
 
             const payment = {
                 id: Date.now(),
@@ -770,14 +805,14 @@
         }
 
         function updatePaymentsTable() {
-            const tbody = document.querySelector('#paymentsTable tbody');
+            const tbody = document.query4422
             tbody.innerHTML = '';
 
             payments.forEach(payment => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td>${payment.customerName}</td>
-                    <td>₹${payment.amount}</td>
+                    <td>₹${payment.amount.toFixed(2)}</td>
                     <td>${payment.date}</td>
                     <td>${payment.note || 'No note'}</td>
                     <td>
